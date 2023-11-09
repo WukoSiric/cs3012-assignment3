@@ -12,7 +12,9 @@ public class Node {
     private static final int SERVER_PORT = 12345;
     private String name;
     private BlockingQueue<String> messageQueue = new ArrayBlockingQueue<>(10);
+    private Thread messageListener; 
     // Proposer variables
+    private Thread proposerThread; 
     private BlockingQueue<String> promiseQueue = new ArrayBlockingQueue<>(10);
     private BlockingQueue<String> acceptQueue = new ArrayBlockingQueue<>(10);
     private Boolean proposer;
@@ -57,7 +59,7 @@ public class Node {
             }
 
             // LISTENING THREAD FOR MESSAGES
-            Thread messageListener = new Thread(() -> {
+            messageListener = new Thread(() -> {
                 try {
                     String receivedMessage;
                     while ((receivedMessage = in.readLine()) != null) {
@@ -114,7 +116,7 @@ public class Node {
     }
 
     private void startProposerThread(PrintWriter out) {
-        Thread proposerThread = new Thread(() -> proposerLogic(out));
+        proposerThread = new Thread(() -> proposerLogic(out));
         proposerThread.start();
     }
 
@@ -196,7 +198,7 @@ public class Node {
                 // Send decide message to all other nodes
                 for (String node : otherNodeNames) {
                     String decideMessage = MessageConstructor.makeDecide(node, this.name);
-                    out.println(node + ":" + decideMessage);
+                    out.println(decideMessage);
                     System.out.println("Sent decide message to " + node + " ->" + decideMessage);
                 }
             }
@@ -298,6 +300,22 @@ public class Node {
         JSONUtils.updateJSONFile(this.name + ".json", json);
 
         System.out.println("Decided on value: " + json.getString("accepted_value"));
+        stopThreadsAndExit();
+    }
+
+    // Method to stop all threads and exit the program
+    private void stopThreadsAndExit() {
+        // Interrupt the proposer thread
+        if (proposerThread != null) {
+            proposerThread.interrupt();
+        }
+
+        // Stop the message listener thread
+        if (messageListener != null) {
+            messageListener.interrupt();
+        }
+
+        // Exit the program
         System.exit(0);
     }
     
