@@ -1,5 +1,15 @@
 # Assignment 3 - Paxos
 ## How to Run 
+To compile the project run the following command from the root directory of the project:
+```
+make
+```
+
+Then, run the following command to start the ConnectionServer:
+```
+make server
+```
+
 
 ## Design Overview 
 The system is comprised of 2 main components: the ConnectionServer, and the Node. The Node contains the Paxos logic and the ConnectionServer is responsible for handling incoming connections and broacasting messages to all nodes. It is important to note though that messages are still functionally unicast as Nodes ignore any messages that are not addressed to them.
@@ -17,6 +27,8 @@ My Node implementation uses the following message types:
 - **DECIDE**
 
 Since there are no learners, a Proposer will send a **DECIDE** message to all Nodes via the ConnectionServer once consensus is reached. Upon receiving a decide message, a Node will print out the decided value and exit.
+
+I also opted to not have any rejection messages or NACKs, since I felt they were unncessary as the Proposers already have a timeout mechanism and the Acceptors will ignore any messages that are not addressed to them. Rejection messages would be good for performance however. 
 
 ### Storage
 
