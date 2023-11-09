@@ -35,6 +35,9 @@ public class Node {
             json.put("max_id", 0);
             JSONUtils.createJSONFile(this.name + ".json", json);
         }
+        else {
+            System.out.println("JSON file detected!");
+        }
     }
 
     public void connect() {
@@ -88,7 +91,7 @@ public class Node {
                     if (receivedMessage.contains("PREPARE")) {
                         handlePrepareMessage(receivedMessage, out);
                     }
-                    else if (receivedMessage.contains("PROMISE")) {
+                    else if (receivedMessage.contains("PROMISE") && this.proposer) {
                         handlePromiseMessage(receivedMessage, out);
                     }
                 }
@@ -150,10 +153,9 @@ public class Node {
         }
 
         Boolean isProposer = false;
-        if (args[1].toLowerCase() == "t" ) {
+        if (args[1].toLowerCase().equals("t")) {
             isProposer = true;
         } 
-        System.out.println("Starting node " + args[0] + " as proposer: " + args[1]);
 
         Node member = new Node(args[0], isProposer);
         member.connect();
