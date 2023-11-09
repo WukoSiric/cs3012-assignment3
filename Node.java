@@ -4,6 +4,7 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.HashSet;
+import org.json.*; 
 
 public class Node {
     private static final String SERVER_ADDRESS = "localhost";
@@ -21,6 +22,21 @@ public class Node {
         this.proposer = proposer;
         if (proposer) {
             proposalNumber = new ProposalNumber(name, 1);
+        }
+
+        // Create / update JSON file
+        if (!JSONUtils.jsonFileExists(this.name + ".json")) {
+            JSONObject json = new JSONObject();
+            json.put("name", this.name);
+            json.put("proposer", this.proposer);
+            json.put("proposal_accepted", false);
+            json.put("accepted_value", ""); 
+            JSONUtils.createJSONFile(this.name + ".json", json);
+        } else {
+            JSONObject json = new JSONObject();
+            json.put("name", this.name);
+            json.put("proposer", this.proposer);
+            JSONUtils.updateJSONFile(this.name + ".json", json);
         }
     }
 

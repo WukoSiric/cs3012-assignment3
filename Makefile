@@ -1,20 +1,22 @@
 
-JC = javac
-CP = -cp
+JCC = javac
+JC = java
+JFLAGS = -g
+CP = -cp .:./json.jar
 
-default: ConnectionServer.class Node.class 
+default: ConnectionServer.class Node.class
 
 ConnectionServer.class: 
-	$(JC) $(CP) . ConnectionServer.java
+	$(JCC) $(JFLAGS) $(CP) ConnectionServer.java
 
 Node.class:
-	$(JC) $(CP) . Node.java
+	$(JCC) $(JFLAGS) $(CP) Node.java
 
 node: 
-	java $(CP) . Node
+	$(JC) $(CP) Node
 
 server: 
-	java $(CP) . ConnectionServer
+	$(JC) $(CP) ConnectionServer
 
 clean: 	
 	$(RM) *.class
