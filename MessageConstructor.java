@@ -21,6 +21,10 @@ public class MessageConstructor {
         return to + ":" + from + ":" + type + ":" + proposalNumber + ":" + value;
     }
 
+    static public String makeAcceptReject(String to, String from) {
+        return to + ":" + from + ":ACCEPTREJECT";
+    }
+
     static public String makeDecide(String to, String from, String value) {
         return to + ":" + from + ":DECIDE:" + value;
     }
