@@ -80,6 +80,7 @@ public class Node {
                                 // If proposer and received accept message, add to acceptQueue
                                 } else if (this.proposer && receivedMessage.contains("ACCEPT")) {
                                     try {
+                                        // System.out.println("RECEIVED: " + receivedMessage);
                                         acceptQueue.put(receivedMessage);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
@@ -145,14 +146,15 @@ public class Node {
                 for (String node : otherNodeNames) {
                     String prepareMessage = MessageConstructor.makePrepare(node, this.name, "PREPARE", proposalNumber.getProposalNumber());
                     out.println(prepareMessage);
-                    System.out.println("Sent prepare message to " + node + " ->" + prepareMessage);
+                    System.out.println("SENT: " + prepareMessage);
                 }
 
                 if (Thread.interrupted()) {
                     break;
                 }
-                // Wait for 7 seconds to process responses
-                Thread.sleep(7000);
+                // Wait for 5 seconds to process responses
+                System.out.println("Waiting for promises...");
+                Thread.sleep(5000);
                 
                 // Check if majority of nodes have promised
                 ArrayList<String> promises = new ArrayList<>();
@@ -190,14 +192,15 @@ public class Node {
                 for (String node : otherNodeNames) {
                     String proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), chosenValue);
                     out.println(proposeMessage);
-                    System.out.println("Sent propose message to " + node + " ->" + proposeMessage);
+                    System.out.println("SENT: " + proposeMessage);
                 }
 
                 if (Thread.interrupted()) {
                     break;
                 }
-                // Wait 7 seconds to wait for accept messages
-                Thread.sleep(7000);
+                // Wait 5 seconds to wait for accept messages
+                System.out.println("Waiting for accept messages...");
+                Thread.sleep(5000);
                 
                 // Check if received majority of accept messages
                 ArrayList<String> accepts = new ArrayList<>();
@@ -207,7 +210,7 @@ public class Node {
 
                 if (!((accepts.size() + 1) > connectedNodeCount / 2)) { // accepts.size() + 1 because proposer is also a node
                     System.out.println("Did not receive majority of accept messages");
-                    System.out.println("Received " + accepts.size() + " accept messages");
+                    System.out.println("Received " + accepts.size() + " accept messages out of " + connectedNodeCount);
                     continue; 
                 }
 
@@ -215,7 +218,7 @@ public class Node {
                 for (String node : otherNodeNames) {
                     String decideMessage = MessageConstructor.makeDecide(node, this.name, chosenValue);
                     out.println(decideMessage);
-                    System.out.println("Sent decide message to " + node + " ->" + decideMessage);
+                    System.out.println("SENT:" + decideMessage);
                 }
 
                 // Exit the program
@@ -240,7 +243,7 @@ public class Node {
 
     /* PHASE 1 */
     private void handlePrepareMessage(String prepareMessage, PrintWriter out) {
-        System.out.println("Received prepare message: " + prepareMessage);
+        System.out.println("RECEIVED " + prepareMessage);
 
         JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
         String[] prepareMessageSplit = prepareMessage.split(":");
@@ -255,11 +258,11 @@ public class Node {
                 System.out.println("Proposal has been accepted");
                 String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber, Float.toString(json.getFloat("accepted_id")), json.getString("accepted_value"));
                 out.println(promiseMessage);
-                System.out.println("Sent promise message: " + promiseMessage);
+                System.out.println("SENT: " + promiseMessage);
             } else {
                 String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber);
                 out.println(promiseMessage);
-                System.out.println("Sent promise message: " + promiseMessage);
+                System.out.println("SENT: " + promiseMessage);
             }
         }
 
@@ -268,7 +271,7 @@ public class Node {
 
     /* PHASE 2 */
     void handleProposeMessage(String proposeMessage, PrintWriter out) {
-        System.out.println("Received propose message: " + proposeMessage);
+        System.out.println("RECEIVED: " + proposeMessage);
 
         JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
         String[] proposeMessageSplit = proposeMessage.split(":");
@@ -286,32 +289,22 @@ public class Node {
 
             String acceptMessage = MessageConstructor.makeAccept(from, this.name, "ACCEPT", proposalNumber, value);
             out.println(acceptMessage);
-            System.out.println("Sent accept message: " + acceptMessage);
-            System.out.println("received proposal number: " + proposalNumber);
-            System.out.println("max_id: " + json.getFloat("max_id"));
+            System.out.println("SENT: " + acceptMessage);
+            // System.out.println("RECEIVED: " + proposalNumber);
+            // System.out.println("max_id: " + json.getFloat("max_id"));
         }
 
         JSONUtils.updateJSONFile(this.name + ".json", json);
     }
 
     String chooseValue() {
-        String[] foods = {
-            "Pizza", "Burger", "Pasta", "Sushi", "Salad",
-            "Sandwich", "Steak", "Soup", "Tacos", "Burrito",
-            "Curry", "Risotto", "Paella", "Falafel", "Lasagna",
-            "Dumplings", "Quiche", "Gnocchi", "Ramen", "Pancakes"
-        };
-
-        Random random = new Random();
-        int index = random.nextInt(foods.length); // Generates a random index between 0 and (foods.length - 1)
-        
-        return foods[index];
+        return this.name; 
     }
 
     /* PHASE 3 */
     // DECIDE:VALUE
     void handleDecideMessage(String decideMessage, PrintWriter out) {
-        System.out.println("Received decide message: " + decideMessage);
+        System.out.println("RECEIVED: " + decideMessage);
 
         JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
         json.put("proposal_accepted", true);
@@ -320,7 +313,7 @@ public class Node {
 
         JSONUtils.updateJSONFile(this.name + ".json", json);
         String[] decideMessageSplit = decideMessage.split(":");
-        System.out.println("Decided on value: " + decideMessageSplit[2]); 
+        System.out.println("DECIDED: " + decideMessageSplit[3]); 
     }
 
     // Method to stop all threads and exit the program
