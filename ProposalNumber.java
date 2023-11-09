@@ -10,7 +10,7 @@ public class ProposalNumber {
         this.proposalNumber = roundNumber + "." + nodeName.substring(1);
     }
 
-    public void incrementRoundNumber() {
+    public void increment() {
         this.roundNumber++;
         this.proposalNumber = roundNumber + "." + nodeName.substring(1);
     }
