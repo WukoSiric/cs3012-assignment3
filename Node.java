@@ -12,6 +12,7 @@ public class Node {
     private String name;
     private BlockingQueue<String> messageQueue = new ArrayBlockingQueue<>(10);
     // Proposer variables
+    private BlockingQueue<String> proposerQueue = new ArrayBlockingQueue<>(10);
     private Boolean proposer;
     private HashSet<String> otherNodeNames = new HashSet<>();
     private int connectedNodeCount;
@@ -49,6 +50,10 @@ public class Node {
             System.out.println(name + " successfully connected to the server.");
             out.println(name + ":Connected");
 
+            if (this.proposer) {
+                startProposerThread(out); 
+            }
+
             // LISTENING THREAD FOR MESSAGES
             Thread messageListener = new Thread(() -> {
                 try {
@@ -57,10 +62,20 @@ public class Node {
                         if (receivedMessage.startsWith("NODES:")) {
                             updateOtherNodeNames(receivedMessage);
                         } else if (receivedMessage.startsWith(this.name)) {
-                            try {
-                                messageQueue.put(receivedMessage);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
+                            // If proposer, add to proposerQueue
+                            if (this.proposer && receivedMessage.contains("PROMISE")) {
+                                try {
+                                    proposerQueue.put(receivedMessage);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            // If acceptor, add to messageQueue
+                            } else {
+                                try {
+                                    messageQueue.put(receivedMessage);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }                                
                             }
                         }
                     }
@@ -70,20 +85,7 @@ public class Node {
             });
             messageListener.start();
 
-            // USER INPUTS DEBUGGING
-            Thread inputListener = new Thread(() -> {
-                try {
-                    String input;
-                    while ((input = userInput.readLine()) != null) {
-                        out.println(input);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-            inputListener.start();
-
-            // HANDLE RECEIVED MESSAGES
+            // ACCEPTOR -> HANDLE RECEIVED MESSAGES
             while (true) {
                 String receivedMessage = messageQueue.poll(); 
                 if (receivedMessage != null) {
@@ -91,12 +93,50 @@ public class Node {
                     if (receivedMessage.contains("PREPARE")) {
                         handlePrepareMessage(receivedMessage, out);
                     }
-                    else if (receivedMessage.contains("PROMISE") && this.proposer) {
-                        handlePromiseMessage(receivedMessage, out);
-                    }
                 }
             }
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startProposerThread(PrintWriter out) {
+        Thread proposerThread = new Thread(() -> proposerLogic(out));
+        proposerThread.start();
+    }
+
+    // Proposer logic with PrintWriter
+    private void proposerLogic(PrintWriter out) {
+        try {
+            while (true) {
+                // Wait for 10 seconds before sending prepare message
+                Thread.sleep(10000);
+
+                // Send prepare messages to all other nodes
+                for (String node : otherNodeNames) {
+                    String prepareMessage = MessageConstructor.makePrepare(node, this.name, "PREPARE", proposalNumber.getProposalNumber());
+                    out.println(prepareMessage);
+                    System.out.println("Sent prepare message to " + node + " ->" + prepareMessage);
+                }
+                proposalNumber.increment();
+
+                // Wait for 7 seconds to process responses
+                Thread.sleep(7000);
+                
+                // Check if majority of nodes have promised
+                ArrayList<String> promises = new ArrayList<>();
+                while (proposerQueue.size() > 0) {
+                    promises.add(proposerQueue.take());
+                }
+
+                if ((promises.size() + 1) > connectedNodeCount / 2) { // promises.size() + 1 because proposer is also a node
+                    System.out.println("Majority of nodes have promised");
+                } else {
+                    System.out.println("Not enough promises received, restarting proposer thread");
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Restore the interrupted status
             e.printStackTrace();
         }
     }
@@ -138,11 +178,6 @@ public class Node {
         }
 
         JSONUtils.updateJSONFile(this.name + ".json", json);
-    }
-
-    private void handlePromiseMessage(String promiseMessage, PrintWriter out) {
-        // TODO: Implement this
-        System.out.println("Received promise message: " + promiseMessage);
     }
 
     /* PHASE 2 */
