@@ -18,3 +18,6 @@ server:
 clean: 	
 	$(RM) *.class
 	$(RM) *.json
+
+clean-json: 
+	$(RM) *.json
