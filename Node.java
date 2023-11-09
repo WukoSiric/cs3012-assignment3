@@ -13,7 +13,8 @@ public class Node {
     private String name;
     private BlockingQueue<String> messageQueue = new ArrayBlockingQueue<>(10);
     // Proposer variables
-    private BlockingQueue<String> proposerQueue = new ArrayBlockingQueue<>(10);
+    private BlockingQueue<String> promiseQueue = new ArrayBlockingQueue<>(10);
+    private BlockingQueue<String> acceptQueue = new ArrayBlockingQueue<>(10);
     private Boolean proposer;
     private HashSet<String> otherNodeNames = new HashSet<>();
     private int connectedNodeCount;
@@ -63,10 +64,17 @@ public class Node {
                         if (receivedMessage.startsWith("NODES:")) {
                             updateOtherNodeNames(receivedMessage);
                         } else if (receivedMessage.startsWith(this.name)) {
-                            // If proposer, add to proposerQueue
+                            // If proposer and received promise message, add to promiseQueue
                             if (this.proposer && receivedMessage.contains("PROMISE")) {
                                 try {
-                                    proposerQueue.put(receivedMessage);
+                                    promiseQueue.put(receivedMessage);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            // If proposer and received accept message, add to acceptQueue
+                            } else if (this.proposer && receivedMessage.contains("ACCEPT")) {
+                                try {
+                                    acceptQueue.put(receivedMessage);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
@@ -95,6 +103,8 @@ public class Node {
                         handlePrepareMessage(receivedMessage, out);
                     } else if (receivedMessage.contains("PROPOSE")) {
                         handleProposeMessage(receivedMessage, out);
+                    } else if (receivedMessage.contains("DECIDE")) {
+                        handleDecideMessage(receivedMessage, out); 
                     }
                 }
             }
@@ -128,8 +138,8 @@ public class Node {
                 
                 // Check if majority of nodes have promised
                 ArrayList<String> promises = new ArrayList<>();
-                while (proposerQueue.size() > 0) {
-                    promises.add(proposerQueue.take());
+                while (promiseQueue.size() > 0) {
+                    promises.add(promiseQueue.take());
                 }
 
                 if (!((promises.size() + 1) > connectedNodeCount / 2)) { // promises.size() + 1 because proposer is also a node
@@ -168,7 +178,27 @@ public class Node {
                     }
                 }
 
-                // Wait 
+                // Wait 7 seconds to wait for accept messages
+                Thread.sleep(7000);
+                
+                // Check if received majority of accept messages
+                ArrayList<String> accepts = new ArrayList<>();
+                while (acceptQueue.size() > 0) {
+                    accepts.add(acceptQueue.take());
+                }
+
+                if (!((accepts.size() + 1) > connectedNodeCount / 2)) { // accepts.size() + 1 because proposer is also a node
+                    System.out.println("Did not receive majority of accept messages");
+                    System.out.println("Received " + accepts.size() + " accept messages");
+                    continue; 
+                }
+
+                // Send decide message to all other nodes
+                for (String node : otherNodeNames) {
+                    String decideMessage = MessageConstructor.makeDecide(node, this.name);
+                    out.println(node + ":" + decideMessage);
+                    System.out.println("Sent decide message to " + node + " ->" + decideMessage);
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // Restore the interrupted status
@@ -253,6 +283,22 @@ public class Node {
         int index = random.nextInt(foods.length); // Generates a random index between 0 and (foods.length - 1)
         
         return foods[index];
+    }
+
+    /* PHASE 3 */
+    // DECIDE:VALUE
+    void handleDecideMessage(String decideMessage, PrintWriter out) {
+        System.out.println("Received decide message: " + decideMessage);
+
+        JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
+        json.put("proposal_accepted", true);
+        json.put("accepted_id", Float.parseFloat(proposalNumber.getProposalNumber()));
+        json.put("accepted_value", chooseValue());
+
+        JSONUtils.updateJSONFile(this.name + ".json", json);
+
+        System.out.println("Decided on value: " + json.getString("accepted_value"));
+        System.exit(0);
     }
     
     public static void main(String[] args) {

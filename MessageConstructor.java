@@ -21,4 +21,8 @@ public class MessageConstructor {
         return to + ":" + from + ":" + type + ":" + proposalNumber + ":" + value;
     }
 
+    static public String makeDecide(String to, String from) {
+        return to + ":" + from + ":DECIDE";
+    }
+
 }
