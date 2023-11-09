@@ -62,31 +62,41 @@ public class Node {
             messageListener = new Thread(() -> {
                 try {
                     String receivedMessage;
-                    while ((receivedMessage = in.readLine()) != null) {
-                        if (receivedMessage.startsWith("NODES:")) {
-                            updateOtherNodeNames(receivedMessage);
-                        } else if (receivedMessage.startsWith(this.name)) {
-                            // If proposer and received promise message, add to promiseQueue
-                            if (this.proposer && receivedMessage.contains("PROMISE")) {
-                                try {
-                                    promiseQueue.put(receivedMessage);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                    while (!Thread.interrupted()) {
+                        if (in.ready()) {
+                            receivedMessage = in.readLine();
+                            if (receivedMessage == null) break;
+                            if (receivedMessage.startsWith("NODES:")) {
+                                updateOtherNodeNames(receivedMessage);
+                            } else if (receivedMessage.startsWith(this.name)) {
+                                // If proposer and received promise message, add to promiseQueue
+                                if (this.proposer && receivedMessage.contains("PROMISE")) {
+                                    try {
+                                        promiseQueue.put(receivedMessage);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                // If proposer and received accept message, add to acceptQueue
+                                } else if (this.proposer && receivedMessage.contains("ACCEPT")) {
+                                    try {
+                                        acceptQueue.put(receivedMessage);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                // If acceptor, add to messageQueue
+                                } else {
+                                    try {
+                                        messageQueue.put(receivedMessage);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }                                
                                 }
-                            // If proposer and received accept message, add to acceptQueue
-                            } else if (this.proposer && receivedMessage.contains("ACCEPT")) {
-                                try {
-                                    acceptQueue.put(receivedMessage);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            // If acceptor, add to messageQueue
-                            } else {
-                                try {
-                                    messageQueue.put(receivedMessage);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }                                
+                            }        
+                        } else {
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                break; // Exit the loop if interrupted during sleep
                             }
                         }
                     }
@@ -95,6 +105,7 @@ public class Node {
                 }
             });
             messageListener.start();
+            
 
             // ACCEPTOR -> HANDLE RECEIVED MESSAGES
             while (true) {
@@ -107,6 +118,7 @@ public class Node {
                         handleProposeMessage(receivedMessage, out);
                     } else if (receivedMessage.contains("DECIDE")) {
                         handleDecideMessage(receivedMessage, out); 
+                        System.exit(0);
                     }
                 }
             }
@@ -123,8 +135,9 @@ public class Node {
     // Proposer logic with PrintWriter
     private void proposerLogic(PrintWriter out) {
         try {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 // Wait for 10 seconds before sending prepare message
+                proposalNumber.increment();
                 Thread.sleep(10000);
 
                 // Send prepare messages to all other nodes
@@ -133,8 +146,10 @@ public class Node {
                     out.println(prepareMessage);
                     System.out.println("Sent prepare message to " + node + " ->" + prepareMessage);
                 }
-                proposalNumber.increment();
 
+                if (Thread.interrupted()) {
+                    break;
+                }
                 // Wait for 7 seconds to process responses
                 Thread.sleep(7000);
                 
@@ -179,7 +194,11 @@ public class Node {
                         System.out.println("Sent propose message to " + node + " ->" + proposeMessage);
                     }
                 }
+                
 
+                if (Thread.interrupted()) {
+                    break;
+                }
                 // Wait 7 seconds to wait for accept messages
                 Thread.sleep(7000);
                 
@@ -201,6 +220,9 @@ public class Node {
                     out.println(decideMessage);
                     System.out.println("Sent decide message to " + node + " ->" + decideMessage);
                 }
+
+                // Exit the program
+                stopThreadsAndExit();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // Restore the interrupted status
