@@ -18,4 +18,8 @@ public class SeededRandom {
     public double nextDouble() {
         return random.nextDouble();
     }
+
+    public boolean nextBoolean() {
+        return random.nextBoolean();
+    }
 }
