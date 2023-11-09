@@ -22,7 +22,7 @@ public class MessageConstructor {
     }
 
     static public String makeDecide(String to, String from, String value) {
-        return to + ":" + from + ":DECIDE" + value;
+        return to + ":" + from + ":DECIDE:" + value;
     }
 
 }
