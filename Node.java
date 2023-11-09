@@ -36,6 +36,7 @@ public class Node {
         }
 
         this.profile = profile;
+        this.rSeededRandom = new SeededRandom(12345); 
 
         // Create / update JSON file
         if (!JSONUtils.jsonFileExists(this.name + ".json")) {
@@ -166,7 +167,7 @@ public class Node {
                 boolean majorityPromisesReceived = false;
     
                 while (currentTime - startTime < TIMEOUT) {
-                    if (promiseQueue.size() > connectedNodeCount / 2) {
+                    if (promiseQueue.size() + 1> connectedNodeCount / 2) {
                         majorityPromisesReceived = true;
                         break;
                     }
@@ -220,7 +221,7 @@ public class Node {
                 boolean majorityAcceptsReceived = false;
     
                 while (currentTime - startTime < TIMEOUT) {
-                    if (acceptQueue.size() > connectedNodeCount / 2) {
+                    if (acceptQueue.size() + 1 > connectedNodeCount / 2) {
                         majorityAcceptsReceived = true;
                         break;
                     }
