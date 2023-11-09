@@ -141,36 +141,43 @@ public class Node {
                 // Wait for 10 seconds before sending prepare message
                 proposalNumber.increment();
                 Thread.sleep(10000);
-
+    
                 // Send prepare messages to all other nodes
                 for (String node : otherNodeNames) {
                     String prepareMessage = MessageConstructor.makePrepare(node, this.name, "PREPARE", proposalNumber.getProposalNumber());
                     out.println(prepareMessage);
-                    System.out.println("SENT: " + prepareMessage);
+                    printWithTimestamp("SENT: " + prepareMessage);
                 }
-
+    
                 if (Thread.interrupted()) {
                     break;
                 }
                 // Wait for 5 seconds to process responses
                 System.out.println("Waiting for promises...");
-                Thread.sleep(5000);
-                
-                // Check if majority of nodes have promised
-                ArrayList<String> promises = new ArrayList<>();
-                while (promiseQueue.size() > 0) {
-                    promises.add(promiseQueue.take());
+                long startTime = System.currentTimeMillis();
+                long currentTime = startTime;
+                boolean majorityPromisesReceived = false;
+    
+                while (currentTime - startTime < 5000) {
+                    if (promiseQueue.size() > connectedNodeCount / 2) {
+                        majorityPromisesReceived = true;
+                        break;
+                    }
+    
+                    Thread.sleep(100); // Check every 100 milliseconds
+                    currentTime = System.currentTimeMillis();
                 }
-
-                if (!((promises.size() + 1) > connectedNodeCount / 2)) { // promises.size() + 1 because proposer is also a node
-                    continue; 
-                } 
-
+    
+                if (!majorityPromisesReceived) {
+                    System.out.println("Did not receive majority of promises");
+                    continue;
+                }
+    
                 // Do any responses contain a value?
-                Float highestProposalNumber = 0f; 
+                Float highestProposalNumber = 0f;
                 String highestProposalValue = "";
                 Boolean valueExists = false;
-                for (String promise : promises) {
+                for (String promise : promiseQueue) {
                     String[] promiseSplit = promise.split(":");
                     if (promiseSplit.length > 5) {
                         valueExists = true;
@@ -180,47 +187,53 @@ public class Node {
                         }
                     }
                 }
-
+    
                 // If value exists, send propose message to all other nodes
                 String chosenValue = "";
-                if (!valueExists) { 
+                if (!valueExists) {
                     chosenValue = chooseValue();
                 } else {
                     chosenValue = highestProposalValue;
                 }
-                
+    
                 for (String node : otherNodeNames) {
                     String proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), chosenValue);
                     out.println(proposeMessage);
                     System.out.println("SENT: " + proposeMessage);
                 }
-
+    
                 if (Thread.interrupted()) {
                     break;
                 }
-                // Wait 5 seconds to wait for accept messages
+                // Wait for 5 seconds to wait for accept messages
                 System.out.println("Waiting for accept messages...");
-                Thread.sleep(5000);
-                
-                // Check if received majority of accept messages
-                ArrayList<String> accepts = new ArrayList<>();
-                while (acceptQueue.size() > 0) {
-                    accepts.add(acceptQueue.take());
+                startTime = System.currentTimeMillis();
+                currentTime = startTime;
+                boolean majorityAcceptsReceived = false;
+    
+                while (currentTime - startTime < 5000) {
+                    if (acceptQueue.size() > connectedNodeCount / 2) {
+                        majorityAcceptsReceived = true;
+                        break;
+                    }
+    
+                    Thread.sleep(100); // Check every 100 milliseconds
+                    currentTime = System.currentTimeMillis();
                 }
-
-                if (!((accepts.size() + 1) > connectedNodeCount / 2)) { // accepts.size() + 1 because proposer is also a node
+    
+                if (!majorityAcceptsReceived) {
                     System.out.println("Did not receive majority of accept messages");
-                    System.out.println("Received " + accepts.size() + " accept messages out of " + connectedNodeCount);
-                    continue; 
+                    System.out.println("Received " + acceptQueue.size() + " accept messages out of " + connectedNodeCount);
+                    continue;
                 }
-
+    
                 // Send decide message to all other nodes
                 for (String node : otherNodeNames) {
                     String decideMessage = MessageConstructor.makeDecide(node, this.name, chosenValue);
                     out.println(decideMessage);
                     System.out.println("SENT:" + decideMessage);
                 }
-
+    
                 // Exit the program
                 stopThreadsAndExit();
             }
@@ -229,6 +242,7 @@ public class Node {
             e.printStackTrace();
         }
     }
+    
 
     private void updateOtherNodeNames(String receivedMessage) {
         String[] names = receivedMessage.split(":");
@@ -243,7 +257,7 @@ public class Node {
 
     /* PHASE 1 */
     private void handlePrepareMessage(String prepareMessage, PrintWriter out) {
-        System.out.println("RECEIVED " + prepareMessage);
+        printWithTimestamp("RECEIVED " + prepareMessage);
 
         JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
         String[] prepareMessageSplit = prepareMessage.split(":");
@@ -289,7 +303,7 @@ public class Node {
 
             String acceptMessage = MessageConstructor.makeAccept(from, this.name, "ACCEPT", proposalNumber, value);
             out.println(acceptMessage);
-            System.out.println("SENT: " + acceptMessage);
+            printWithTimestamp("SENT: " + acceptMessage);
             // System.out.println("RECEIVED: " + proposalNumber);
             // System.out.println("max_id: " + json.getFloat("max_id"));
         }
@@ -304,7 +318,7 @@ public class Node {
     /* PHASE 3 */
     // DECIDE:VALUE
     void handleDecideMessage(String decideMessage, PrintWriter out) {
-        System.out.println("RECEIVED: " + decideMessage);
+        printWithTimestamp("RECEIVED: " + decideMessage);
 
         JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
         json.put("proposal_accepted", true);
