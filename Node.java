@@ -30,13 +30,10 @@ public class Node {
             json.put("name", this.name);
             json.put("proposer", this.proposer);
             json.put("proposal_accepted", false);
+            json.put("accepted_id", 0); 
             json.put("accepted_value", ""); 
+            json.put("max_id", 0);
             JSONUtils.createJSONFile(this.name + ".json", json);
-        } else {
-            JSONObject json = new JSONObject();
-            json.put("name", this.name);
-            json.put("proposer", this.proposer);
-            JSONUtils.updateJSONFile(this.name + ".json", json);
         }
     }
 
@@ -114,8 +111,30 @@ public class Node {
 
     /* PHASE 1 */
     private void handlePrepareMessage(String prepareMessage, PrintWriter out) {
-        // TODO: Implement this
         System.out.println("Received prepare message: " + prepareMessage);
+
+        JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
+        String[] prepareMessageSplit = prepareMessage.split(":");
+        String from = prepareMessageSplit[1];
+        String proposalNumber = prepareMessageSplit[3];
+
+        if (Float.parseFloat(proposalNumber) < json.getFloat("max_id")) {
+            System.out.println("Proposal number is less than max_id");
+        } else {
+            json.put("max_id", Float.parseFloat(proposalNumber));
+            if (json.getBoolean("proposal_accepted")) {
+                System.out.println("Proposal has been accepted");
+                String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber, Float.toString(json.getFloat("accepted_id")), json.getString("accepted_value"));
+                out.println(promiseMessage);
+                System.out.println("Sent promise message: " + promiseMessage);
+            } else {
+                String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber);
+                out.println(promiseMessage);
+                System.out.println("Sent promise message: " + promiseMessage);
+            }
+        }
+
+        JSONUtils.updateJSONFile(this.name + ".json", json);
     }
 
     private void handlePromiseMessage(String promiseMessage, PrintWriter out) {
@@ -131,9 +150,10 @@ public class Node {
         }
 
         Boolean isProposer = false;
-        if (args[1].toLowerCase() == "true" ) {
+        if (args[1].toLowerCase() == "t" ) {
             isProposer = true;
-        }
+        } 
+        System.out.println("Starting node " + args[0] + " as proposer: " + args[1]);
 
         Node member = new Node(args[0], isProposer);
         member.connect();

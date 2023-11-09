@@ -1,28 +1,19 @@
 public class MessageConstructor {
-    MessageType type; // Enum: PREPARE, PROMISE, ACCEPT
     // MESSAGE STRUCTURE TO:FROM:TYPE:PROPOSALNUMBER:VALUE 
 
-    enum MessageType {
-        PREPARE, PROMISE, ACCEPT, ACCEPT_REQUEST 
-    }
-
-    public String makePrepare(String to, String from, String proposalNumber) {
-        this.type = MessageType.PREPARE;
+    static public String makePrepare(String to, String from, String type, String proposalNumber) {
         return to + ":" + from + ":" + type + ":" + proposalNumber;
     }
 
-    public String makePromise(String to, String from, String proposalNumber, String value) {
-        this.type = MessageType.PROMISE;
-        return to + ":" + from + ":" + type + ":" + proposalNumber + ":" + value;
+    static public String makePromise(String to, String from, String type, String proposalNumber, String acceptedID, String value) {
+        return to + ":" + from + ":" + type + ":" + proposalNumber + ":" + acceptedID  + ":" + value;
     }
 
-    public String makePromise(String to, String from, String proposalNumber) {
-        this.type = MessageType.PROMISE;
+    static public String makePromise(String to, String from, String type, String proposalNumber) {
         return to + ":" + from + ":" + type + ":" + proposalNumber;
     }
 
-    public String makePropose(String to, String from, String proposalNumber, String value) {
-        this.type = MessageType.ACCEPT;
+    static public String makePropose(String to, String from, String type, String proposalNumber, String value) {
         return to + ":" + from + ":" + type + ":" + proposalNumber + ":" + value;
     }
 

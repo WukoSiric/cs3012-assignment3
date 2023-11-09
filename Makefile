@@ -12,11 +12,9 @@ ConnectionServer.class:
 Node.class:
 	$(JCC) $(JFLAGS) $(CP) Node.java
 
-node: 
-	$(JC) $(CP) Node
-
 server: 
 	$(JC) $(CP) ConnectionServer
 
 clean: 	
 	$(RM) *.class
+	$(RM) *.json
