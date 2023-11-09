@@ -5,6 +5,7 @@ import java.util.*;
 public class ConnectionServer {
     private static final int PORT = 12345;
     private static List<ClientHandler> connectedClients = Collections.synchronizedList(new ArrayList<>());
+    private static List<String> connectedNodeNames = Collections.synchronizedList(new ArrayList<>()); 
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -37,7 +38,14 @@ public class ConnectionServer {
             try {
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
-                    broadcast(inputLine);
+                    // Update connected node names
+                    if (inputLine.endsWith(":Connected")) {
+                        String nodeName = inputLine.substring(0, inputLine.indexOf(":Connected"));
+                        connectedNodeNames.add(nodeName);
+                        broadcastConnectedNodeNames();
+                    } else {
+                        broadcast(inputLine);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -55,5 +63,23 @@ public class ConnectionServer {
                 }
             }
         }
+
+        private static void broadcastConnectedNodeNames() {
+            StringBuilder names = new StringBuilder();
+            names.append("NODES:");
+            for (String nodeName : connectedNodeNames) {
+                names.append(nodeName).append(":");
+            }
+            
+            // Remove the trailing colon, if any
+            if (names.length() > 0) {
+                names.deleteCharAt(names.length() - 1);
+            }
+            String message = names.toString();
+            for (ClientHandler client : connectedClients) {
+                client.sendMessage(message);
+            }
+        }
+        
     }
 }
