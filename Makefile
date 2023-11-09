@@ -2,16 +2,16 @@
 JC = javac
 CP = -cp
 
-default: ConnectionServer.class CouncilMember.class 
+default: ConnectionServer.class Node.class 
 
 ConnectionServer.class: 
 	$(JC) $(CP) . ConnectionServer.java
 
-CouncilMember.class:
-	$(JC) $(CP) . CouncilMember.java
+Node.class:
+	$(JC) $(CP) . Node.java
 
 node: 
-	java $(CP) . CouncilMember
+	java $(CP) . Node
 
 server: 
 	java $(CP) . ConnectionServer
