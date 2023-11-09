@@ -18,6 +18,7 @@ public class Node {
     private BlockingQueue<String> promiseQueue = new ArrayBlockingQueue<>(10);
     private BlockingQueue<String> acceptQueue = new ArrayBlockingQueue<>(10);
     private Boolean proposer;
+    private Boolean hasWaited = false;
     private HashSet<String> otherNodeNames = new HashSet<>();
     private int connectedNodeCount;
     private ProposalNumber proposalNumber;
@@ -179,22 +180,18 @@ public class Node {
                 }
 
                 // If value exists, send propose message to all other nodes
-                String proposeMessage = "";
-                if (valueExists) {
-                    for (String node : otherNodeNames) {
-                        proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), highestProposalValue);
-                        out.println(proposeMessage);
-                        System.out.println("Sent propose message to " + node + " ->" + proposeMessage);
-                    }
+                String chosenValue = "";
+                if (!valueExists) { 
+                    chosenValue = chooseValue();
                 } else {
-                    String chosenValue = chooseValue();
-                    for (String node : otherNodeNames) {
-                        proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), chosenValue);
-                        out.println(proposeMessage);
-                        System.out.println("Sent propose message to " + node + " ->" + proposeMessage);
-                    }
+                    chosenValue = highestProposalValue;
                 }
                 
+                for (String node : otherNodeNames) {
+                    String proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), chosenValue);
+                    out.println(proposeMessage);
+                    System.out.println("Sent propose message to " + node + " ->" + proposeMessage);
+                }
 
                 if (Thread.interrupted()) {
                     break;
@@ -216,7 +213,7 @@ public class Node {
 
                 // Send decide message to all other nodes
                 for (String node : otherNodeNames) {
-                    String decideMessage = MessageConstructor.makeDecide(node, this.name);
+                    String decideMessage = MessageConstructor.makeDecide(node, this.name, chosenValue);
                     out.println(decideMessage);
                     System.out.println("Sent decide message to " + node + " ->" + decideMessage);
                 }
@@ -290,6 +287,8 @@ public class Node {
             String acceptMessage = MessageConstructor.makeAccept(from, this.name, "ACCEPT", proposalNumber, value);
             out.println(acceptMessage);
             System.out.println("Sent accept message: " + acceptMessage);
+            System.out.println("received proposal number: " + proposalNumber);
+            System.out.println("max_id: " + json.getFloat("max_id"));
         }
 
         JSONUtils.updateJSONFile(this.name + ".json", json);
@@ -320,9 +319,8 @@ public class Node {
         json.put("accepted_value", chooseValue());
 
         JSONUtils.updateJSONFile(this.name + ".json", json);
-
-        System.out.println("Decided on value: " + json.getString("accepted_value"));
-        stopThreadsAndExit();
+        String[] decideMessageSplit = decideMessage.split(":");
+        System.out.println("Decided on value: " + decideMessageSplit[2]); 
     }
 
     // Method to stop all threads and exit the program
