@@ -7,6 +7,7 @@ import java.util.HashSet;
 import org.json.*; 
 import java.util.Random; 
 
+
 public class Node {
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 12345;
@@ -22,6 +23,8 @@ public class Node {
     private HashSet<String> otherNodeNames = new HashSet<>();
     private int connectedNodeCount;
     private ProposalNumber proposalNumber;
+    public final int CONNECTION_WAIT = 10000; // How long proposer waits for connections
+    public final int TIMEOUT = 5000; // How long proposer waits for responses
 
     public Node(String name, Boolean proposer) {
         this.name = name;
@@ -140,7 +143,7 @@ public class Node {
             while (!Thread.currentThread().isInterrupted()) {
                 // Wait for 10 seconds before sending prepare message
                 proposalNumber.increment();
-                Thread.sleep(10000);
+                Thread.sleep(CONNECTION_WAIT);
     
                 // Send prepare messages to all other nodes
                 for (String node : otherNodeNames) {
@@ -158,7 +161,7 @@ public class Node {
                 long currentTime = startTime;
                 boolean majorityPromisesReceived = false;
     
-                while (currentTime - startTime < 5000) {
+                while (currentTime - startTime < TIMEOUT) {
                     if (promiseQueue.size() > connectedNodeCount / 2) {
                         majorityPromisesReceived = true;
                         break;
@@ -211,7 +214,7 @@ public class Node {
                 currentTime = startTime;
                 boolean majorityAcceptsReceived = false;
     
-                while (currentTime - startTime < 5000) {
+                while (currentTime - startTime < TIMEOUT) {
                     if (acceptQueue.size() > connectedNodeCount / 2) {
                         majorityAcceptsReceived = true;
                         break;
