@@ -153,7 +153,7 @@ public class Node {
                     break;
                 }
                 // Wait for 5 seconds to process responses
-                System.out.println("Waiting for promises...");
+                printWithTimestamp("> Waiting for promises...");
                 long startTime = System.currentTimeMillis();
                 long currentTime = startTime;
                 boolean majorityPromisesReceived = false;
@@ -169,7 +169,7 @@ public class Node {
                 }
     
                 if (!majorityPromisesReceived) {
-                    System.out.println("Did not receive majority of promises");
+                    printWithTimestamp("Did not receive majority of promises");
                     continue;
                 }
     
@@ -199,14 +199,14 @@ public class Node {
                 for (String node : otherNodeNames) {
                     String proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), chosenValue);
                     out.println(proposeMessage);
-                    System.out.println("SENT: " + proposeMessage);
+                    printWithTimestamp("SENT: " + proposeMessage);
                 }
     
                 if (Thread.interrupted()) {
                     break;
                 }
                 // Wait for 5 seconds to wait for accept messages
-                System.out.println("Waiting for accept messages...");
+                printWithTimestamp("> Waiting for accept messages...");
                 startTime = System.currentTimeMillis();
                 currentTime = startTime;
                 boolean majorityAcceptsReceived = false;
@@ -222,16 +222,19 @@ public class Node {
                 }
     
                 if (!majorityAcceptsReceived) {
-                    System.out.println("Did not receive majority of accept messages");
-                    System.out.println("Received " + acceptQueue.size() + " accept messages out of " + connectedNodeCount);
+                    printWithTimestamp("> Did not receive majority of accept messages");
+                    printWithTimestamp("> Received " + acceptQueue.size() + " accept messages out of " + connectedNodeCount);
                     continue;
                 }
-    
+
+                printWithTimestamp("> Majority of accept messages received!");
+                printWithTimestamp("> Received " + acceptQueue.size() + " accept messages out of " + connectedNodeCount);
+
                 // Send decide message to all other nodes
                 for (String node : otherNodeNames) {
                     String decideMessage = MessageConstructor.makeDecide(node, this.name, chosenValue);
                     out.println(decideMessage);
-                    System.out.println("SENT:" + decideMessage);
+                    printWithTimestamp("SENT:" + decideMessage);
                 }
     
                 // Exit the program
