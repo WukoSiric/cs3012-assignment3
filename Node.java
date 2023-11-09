@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.HashSet;
 import org.json.*; 
+import java.util.Random; 
 
 public class Node {
     private static final String SERVER_ADDRESS = "localhost";
@@ -92,6 +93,8 @@ public class Node {
                     // PHASE 1
                     if (receivedMessage.contains("PREPARE")) {
                         handlePrepareMessage(receivedMessage, out);
+                    } else if (receivedMessage.contains("PROPOSE")) {
+                        handleProposeMessage(receivedMessage, out);
                     }
                 }
             }
@@ -129,11 +132,43 @@ public class Node {
                     promises.add(proposerQueue.take());
                 }
 
-                if ((promises.size() + 1) > connectedNodeCount / 2) { // promises.size() + 1 because proposer is also a node
-                    System.out.println("Majority of nodes have promised");
-                } else {
-                    System.out.println("Not enough promises received, restarting proposer thread");
+                if (!((promises.size() + 1) > connectedNodeCount / 2)) { // promises.size() + 1 because proposer is also a node
+                    continue; 
+                } 
+
+                // Do any responses contain a value?
+                Float highestProposalNumber = 0f; 
+                String highestProposalValue = "";
+                Boolean valueExists = false;
+                for (String promise : promises) {
+                    String[] promiseSplit = promise.split(":");
+                    if (promiseSplit.length > 5) {
+                        valueExists = true;
+                        if (Float.parseFloat(promiseSplit[4]) > highestProposalNumber) {
+                            highestProposalNumber = Float.parseFloat(promiseSplit[4]);
+                            highestProposalValue = promiseSplit[5];
+                        }
+                    }
                 }
+
+                // If value exists, send propose message to all other nodes
+                String proposeMessage = "";
+                if (valueExists) {
+                    for (String node : otherNodeNames) {
+                        proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), highestProposalValue);
+                        out.println(proposeMessage);
+                        System.out.println("Sent propose message to " + node + " ->" + proposeMessage);
+                    }
+                } else {
+                    String chosenValue = chooseValue();
+                    for (String node : otherNodeNames) {
+                        proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), chosenValue);
+                        out.println(proposeMessage);
+                        System.out.println("Sent propose message to " + node + " ->" + proposeMessage);
+                    }
+                }
+
+                // Wait 
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // Restore the interrupted status
@@ -181,6 +216,45 @@ public class Node {
     }
 
     /* PHASE 2 */
+    void handleProposeMessage(String proposeMessage, PrintWriter out) {
+        System.out.println("Received propose message: " + proposeMessage);
+
+        JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
+        String[] proposeMessageSplit = proposeMessage.split(":");
+        String from = proposeMessageSplit[1];
+        String proposalNumber = proposeMessageSplit[3];
+        String value = proposeMessageSplit[4];
+
+        if (Float.parseFloat(proposalNumber) < json.getFloat("max_id")) {
+            System.out.println("Proposal number is less than max_id");
+        } else {
+            json.put("max_id", Float.parseFloat(proposalNumber));
+            json.put("proposal_accepted", true);
+            json.put("accepted_id", Float.parseFloat(proposalNumber));
+            json.put("accepted_value", value);
+
+            String acceptMessage = MessageConstructor.makeAccept(from, this.name, "ACCEPT", proposalNumber, value);
+            out.println(acceptMessage);
+            System.out.println("Sent accept message: " + acceptMessage);
+        }
+
+        JSONUtils.updateJSONFile(this.name + ".json", json);
+    }
+
+    String chooseValue() {
+        String[] foods = {
+            "Pizza", "Burger", "Pasta", "Sushi", "Salad",
+            "Sandwich", "Steak", "Soup", "Tacos", "Burrito",
+            "Curry", "Risotto", "Paella", "Falafel", "Lasagna",
+            "Dumplings", "Quiche", "Gnocchi", "Ramen", "Pancakes"
+        };
+
+        Random random = new Random();
+        int index = random.nextInt(foods.length); // Generates a random index between 0 and (foods.length - 1)
+        
+        return foods[index];
+    }
+    
     public static void main(String[] args) {
         if (args.length < 2) {
             System.out.println("Please provide a name for the council member.");

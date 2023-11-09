@@ -17,6 +17,8 @@ public class MessageConstructor {
         return to + ":" + from + ":" + type + ":" + proposalNumber + ":" + value;
     }
 
-    
+    static public String makeAccept(String to, String from, String type, String proposalNumber, String value) {
+        return to + ":" + from + ":" + type + ":" + proposalNumber + ":" + value;
+    }
 
 }
