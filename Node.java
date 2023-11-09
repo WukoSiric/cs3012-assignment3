@@ -258,11 +258,11 @@ public class Node {
                 System.out.println("Proposal has been accepted");
                 String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber, Float.toString(json.getFloat("accepted_id")), json.getString("accepted_value"));
                 out.println(promiseMessage);
-                System.out.println("SENT: " + promiseMessage);
+                printWithTimestamp("SENT:" + promiseMessage);
             } else {
                 String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber);
                 out.println(promiseMessage);
-                System.out.println("SENT: " + promiseMessage);
+                printWithTimestamp("SENT:" + promiseMessage);
             }
         }
 
@@ -271,7 +271,7 @@ public class Node {
 
     /* PHASE 2 */
     void handleProposeMessage(String proposeMessage, PrintWriter out) {
-        System.out.println("RECEIVED: " + proposeMessage);
+        printWithTimestamp("RECEIVED:" + proposeMessage);
 
         JSONObject json = JSONUtils.readJSONFile(this.name + ".json");
         String[] proposeMessageSplit = proposeMessage.split(":");
@@ -331,6 +331,19 @@ public class Node {
         // Exit the program
         System.exit(0);
     }
+
+// Print with timestamp in "hh:mm:ss:xx" format
+private void printWithTimestamp(String message) {
+    long currentTimeMillis = System.currentTimeMillis();
+    long currentTimeSeconds = currentTimeMillis / 1000;
+    long seconds = currentTimeSeconds % 60;
+    long minutes = (currentTimeSeconds / 60) % 60;
+    long millis = currentTimeMillis % 1000;
+
+    String timestamp = String.format("%02d:%02d:%03d", minutes, seconds, millis);
+    System.out.println("[" + timestamp + "] " + message);
+}
+
     
     public static void main(String[] args) {
         if (args.length < 2) {
