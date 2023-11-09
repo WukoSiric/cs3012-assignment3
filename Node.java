@@ -11,6 +11,8 @@ import java.util.Random;
 public class Node {
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 12345;
+    private SeededRandom rSeededRandom; 
+    private Profile profile; 
     private String name;
     private BlockingQueue<String> messageQueue = new ArrayBlockingQueue<>(10);
     private Thread messageListener; 
@@ -26,12 +28,14 @@ public class Node {
     public final int CONNECTION_WAIT = 10000; // How long proposer waits for connections
     public final int TIMEOUT = 5000; // How long proposer waits for responses
 
-    public Node(String name, Boolean proposer) {
+    public Node(String name, Boolean propose, Profile profile) {
         this.name = name;
-        this.proposer = proposer;
+        this.proposer = propose;
         if (proposer) {
             proposalNumber = new ProposalNumber(name, 1);
         }
+
+        this.profile = profile;
 
         // Create / update JSON file
         if (!JSONUtils.jsonFileExists(this.name + ".json")) {
@@ -173,6 +177,7 @@ public class Node {
     
                 if (!majorityPromisesReceived) {
                     printWithTimestamp("Did not receive majority of promises");
+                    printWithTimestamp("> Received " + promiseQueue.size() + " accept messages out of " + connectedNodeCount);
                     continue;
                 }
     
@@ -310,8 +315,6 @@ public class Node {
             String acceptMessage = MessageConstructor.makeAccept(from, this.name, "ACCEPT", proposalNumber, value);
             out.println(acceptMessage);
             printWithTimestamp("SENT: " + acceptMessage);
-            // System.out.println("RECEIVED: " + proposalNumber);
-            // System.out.println("max_id: " + json.getFloat("max_id"));
         }
 
         JSONUtils.updateJSONFile(this.name + ".json", json);
@@ -338,17 +341,14 @@ public class Node {
 
     // Method to stop all threads and exit the program
     private void stopThreadsAndExit() {
-        // Interrupt the proposer thread
         if (proposerThread != null) {
             proposerThread.interrupt();
         }
 
-        // Stop the message listener thread
         if (messageListener != null) {
             messageListener.interrupt();
         }
 
-        // Exit the program
         System.exit(0);
     }
 
@@ -366,17 +366,33 @@ private void printWithTimestamp(String message) {
 
     
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Please provide a name for the council member.");
+        if (args.length < 3) {
+            System.out.println("Usage: java Node <name> <isProposer> <profiel>");
+            System.out.println("Profile determines delay time for messages and also the probability of a message being dropped.");
+            System.out.println("See the README.md for more information."); 
             return;
         }
 
         Boolean isProposer = false;
-        if (args[1].toLowerCase().equals("t")) {
+        if (args[1].toUpperCase().equals("T")) {
             isProposer = true;
         } 
 
-        Node member = new Node(args[0], isProposer);
+        Profile profile; 
+        if (    args[2].toUpperCase().equals("IR") 
+            ||  args[2].toUpperCase().equals("M2")
+            ||  args[2].toUpperCase().equals("M3")
+            ||  args[2].toUpperCase().equals("SMALL")
+            ||  args[2].toUpperCase().equals("LARGE")) {
+            System.out.println("Chosen profile: " + args[2]);
+            profile = new Profile(args[2]);
+        } else {
+            System.out.println("Invalid profile. Please choose from IR, M2, M3, SMALL, LARGE.");
+            System.out.println("NOT profile: " + args[2]);
+            return; 
+        }
+
+        Node member = new Node(args[0], isProposer, profile);
         member.connect();
     }
 }
