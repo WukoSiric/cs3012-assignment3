@@ -5,19 +5,23 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.HashSet;
 
-
 public class Node {
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 12345;
     private String name;
-    private Boolean proposer;
     private BlockingQueue<String> messageQueue = new ArrayBlockingQueue<>(10);
+    // Proposer variables
+    private Boolean proposer;
     private HashSet<String> otherNodeNames = new HashSet<>();
     private int connectedNodeCount;
+    private ProposalNumber proposalNumber;
 
     public Node(String name, Boolean proposer) {
         this.name = name;
         this.proposer = proposer;
+        if (proposer) {
+            proposalNumber = new ProposalNumber(name, 1);
+        }
     }
 
     public void connect() {
@@ -67,10 +71,13 @@ public class Node {
             while (true) {
                 String receivedMessage = messageQueue.poll(); 
                 if (receivedMessage != null) {
-                    // Process received message and send response if needed
-                    System.out.println("Received message: " + receivedMessage);
-                    // print otherNodeNames
-                    System.out.println("Other node names: " + otherNodeNames);
+                    // PHASE 1
+                    if (receivedMessage.contains("PREPARE")) {
+                        handlePrepareMessage(receivedMessage, out);
+                    }
+                    else if (receivedMessage.contains("PROMISE")) {
+                        handlePromiseMessage(receivedMessage, out);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -89,8 +96,18 @@ public class Node {
         connectedNodeCount = otherNodeNames.size() + 1;
     }
 
-    // Proposer functions 
-    // Acceptor functions
+    /* PHASE 1 */
+    private void handlePrepareMessage(String prepareMessage, PrintWriter out) {
+        // TODO: Implement this
+        System.out.println("Received prepare message: " + prepareMessage);
+    }
+
+    private void handlePromiseMessage(String promiseMessage, PrintWriter out) {
+        // TODO: Implement this
+        System.out.println("Received promise message: " + promiseMessage);
+    }
+
+    /* PHASE 2 */
     public static void main(String[] args) {
         if (args.length < 2) {
             System.out.println("Please provide a name for the council member.");
