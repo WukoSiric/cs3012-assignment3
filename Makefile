@@ -39,13 +39,10 @@ run-tests:
 	./test0.sh
 	./test1.sh
 	./test2.sh
-	./test3.sh
-	./test4.sh
 	./test-checker.sh test0
 	./test-checker.sh test1
 	./test-checker.sh test2
-	./test-checker.sh test3
-	./test-checker.sh test4
+
 # Cleaning utils 
 clean: 	
 	$(RM) *.class

@@ -90,7 +90,22 @@ The suite is comprised of bash scripts which utilise the makefile to run the sys
 **NOTE**: Do not run any processes on port 12345 as this is the port the ConnectionServer uses.
 
 ### Running Tests
-To run all tests run the following command from the root directory of the project:
+Test outputs are stored in the `test0`, `test1`, etc. folders.
+There is also a `test-checker.sh` script which checks the folder and ensures a DECIDE has been made for each node. 
+
+## Single Tests 
+I recommend running each test separately to get a better idea of what's going on. To do this, run the following in a terminal.
+```
+make clean
+make
+./test0.sh (can be test1, test2, etc.)
+./test-checker.sh test0
+```
+
+test3 and test4 take a while to run as they have a lot of messages to send, and they also test dropping the most so I haven't included them in the full suite for convenience.
+
+## Automated Test Suite
+To run the fully automated suite, run the following command from the root directory of the project:
 
 ```
 make clean
@@ -98,7 +113,6 @@ make run-tests
 ```
 
 Note: It's important to run `make clean` before running `make run-tests` to ensure that no old storage files are used.
-Test outputs are stored in the `test0`, `test1`, etc. folders.
 
 The test suite runs the following tests in order:
 
