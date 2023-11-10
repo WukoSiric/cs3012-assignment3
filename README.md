@@ -10,6 +10,31 @@ Then, run the following command to start the ConnectionServer:
 make server
 ```
 
+To run the nodes with the precondition that the ConnectionServer is running, run the following commands in separate terminals:
+```
+make m1
+make m2 
+...
+make m3
+```
+
+### Warnings / Exceptions 
+After an Acceptor has received a DECIDE message, an exception occurs which looks like the following: 
+```
+...
+Exception in thread "main" java.lang.NullPointerException
+        at Node.handleDecideMessage(Node.java:365)
+        at Node.connect(Node.java:130)
+        at Node.main(Node.java:427)
+java.io.IOException: Stream closed
+        at java.io.BufferedReader.ensureOpen(BufferedReader.java:122)
+        at java.io.BufferedReader.ready(BufferedReader.java:444)
+        at Node.lambda$connect$0(Node.java:75)
+        at java.lang.Thread.run(Thread.java:748)
+bash-4.2$ 
+```
+This doesn't change the functionality of the system however, as the decided value can be seen above the exception. 
+It's caused by my threads not exiting safely and is something I would fix if I had more time.
 
 ## Design Overview 
 The system is comprised of 2 main components: the ConnectionServer, and the Node. The Node contains the Paxos logic and the ConnectionServer is responsible for handling incoming connections and broacasting messages to all nodes. It is important to note though that messages are still functionally unicast as Nodes ignore any messages that are not addressed to them.
