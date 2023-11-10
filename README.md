@@ -98,11 +98,30 @@ make run-tests
 ```
 
 Note: It's important to run `make clean` before running `make run-tests` to ensure that no old storage files are used.
+Test outputs are stored in the `test0`, `test1`, etc. folders.
 
 The test suite runs the following tests in order:
 
 **Test 0:** This test ensures that consensus is reached when one node proposes 
 
-**Test 1:** This test ensures that consensus is reached when two nodes propose different values at the same time.
+**Test 1:** This test ensures that consensus is reached when two nodes propose different values at the same time, small profile
+
+**Test 2:** This test ensures that consensus is reached when nodes have immediate respones
+
+* M1 - Proposer, Instant Profile
+* M2 - Proposer, M2 Profile
+* M3 - Proposer, M3 Profile
+* M4 - Proposer, Small Profile
+* ...
+* M4 - Proposer, Small Profile
+
+**Test 3:** This test ensures that consensus is reached when nodes have delayed responses
+* All nodes have M2 profile
+* M1 - M3 are proposers
+
+**Test 4:** This test ensures that consensus is reached when 4 nodes go offline
+* M1 - M3 are proposers
+* All nodes have Large Profile
+
 
 
