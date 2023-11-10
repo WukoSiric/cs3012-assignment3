@@ -28,7 +28,7 @@ sleep 1
 echo "Servers and nodes have been started."
 
 # Wait for all background processes to finish
-sleep 20 # Wait for 15 seconds
+sleep 40 # Wait for 15 seconds
 
 kill $(pgrep -f "ConnectionServer")
 echo "All processes have finished."
