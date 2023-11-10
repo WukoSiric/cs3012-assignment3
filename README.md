@@ -18,6 +18,20 @@ make m2
 make m3
 ```
 
+If you want more control, heres how you can run a node and fully configure it:
+
+```
+java -cp .:./json.jar Node <nodeName> <TRUE> <Profile>
+```
+* **nodeName**: The name of the node. Must be unique. Stick to M1-M9
+* **TRUE**: Whether the node is a proposer or not. Input TRUE if it is, anything else if it isn't.
+* **Profile**: The profile of the node. 
+    * **INSTANT** : The node instantly sends and receives messages.
+    * **M2** : ~4 second delay before sending messages, 20% chance of dropping messages.
+    * **M3** : ~1 second delay before sending messages, 50% chance of dropping messages.
+    * **SMALL** : ~0.5 second delay before sending messages, 5% chance of dropping messages.
+    * **LARGE**: ~1 second delay before sending messages, 5% chance of dropping messages.
+
 ### Warnings / Exceptions 
 After an Acceptor has received a DECIDE message, an exception occurs which looks like the following: 
 ```
