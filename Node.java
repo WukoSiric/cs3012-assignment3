@@ -367,7 +367,7 @@ public class Node {
 
         JSONUtils.updateJSONFile(this.name + ".json", json);
         String[] decideMessageSplit = decideMessage.split(":");
-        System.out.println("DECIDED: " + decideMessageSplit[3]); 
+        System.out.println("DECIDE:" + decideMessageSplit[3]); 
     }
 
     // Method to stop all threads and exit the program
@@ -405,7 +405,8 @@ private void printWithTimestamp(String message) {
         }
 
         Boolean isProposer = false;
-        if (args[1].toUpperCase().equals("True")) {
+        if (args[1].toUpperCase().equals("TRUE")) {
+            System.out.println("Is Proposer!");
             isProposer = true;
         } 
 
