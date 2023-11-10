@@ -16,11 +16,11 @@ server:
 	$(JC) $(CP) ConnectionServer
 
 m1: 
-	$(JC) $(CP) Node M1 T INSTANT
+	$(JC) $(CP) Node M1 True INSTANT
 m2: 
-	$(JC) $(CP) Node M2 T M2
+	$(JC) $(CP) Node M2 True M2
 m3: 
-	$(JC) $(CP) Node M3 T M3
+	$(JC) $(CP) Node M3 True M3
 m4: 
 	$(JC) $(CP) Node M4 F INSTANT
 m5: 

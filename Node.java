@@ -405,7 +405,7 @@ private void printWithTimestamp(String message) {
         }
 
         Boolean isProposer = false;
-        if (args[1].toUpperCase().equals("T")) {
+        if (args[1].toUpperCase().equals("True")) {
             isProposer = true;
         } 
 
