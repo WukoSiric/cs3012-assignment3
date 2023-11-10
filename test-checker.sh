@@ -24,11 +24,9 @@ check_consensus() {
     return 1
   fi
 
-  # Using awk to extract the value after DECIDE:M
-  local consensus=$(awk '/DECIDE:M/{print substr($0, index($0, $3))}' "$file")
-
-  if [ -n "$consensus" ]; then
-    echo "Consensus reached in $file with $consensus."
+  # Check if the file contains "DECIDE:M"
+  if grep -q "DECIDE:M" "$file"; then
+    echo "Consensus reached in $file."
     return 0
   else
     echo "Consensus NOT reached in $file."
