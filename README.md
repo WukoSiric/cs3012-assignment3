@@ -96,8 +96,6 @@ There is also a `test-checker.sh` script which checks the folder and ensures a D
 ## Single Tests 
 I recommend running each test separately to get a better idea of what's going on. To do this, run the following in a terminal.
 ```
-make clean
-make
 ./test0.sh (can be test1, test2, etc.)
 ./test-checker.sh test0
 ```
