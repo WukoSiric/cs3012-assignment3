@@ -128,7 +128,7 @@ public class Node {
                         handleProposeMessage(receivedMessage, out);
                     } else if (receivedMessage.contains("DECIDE")) {
                         handleDecideMessage(receivedMessage, out); 
-                        System.exit(0);
+                        stopThreadsAndExit();
                     }
                 }
             }
@@ -142,6 +142,32 @@ public class Node {
         proposerThread.start();
     }
 
+    // SendMessage method with delay and drop probability
+    public void sendMessage(PrintWriter out, String message) {
+        int delay = this.profile.getMessageDelayMilliseconds(); 
+        double dropProbability = this.profile.getMessageDropProbability(); 
+
+        // Generate random number between 0 and 1
+        double random = rSeededRandom.nextDouble();
+        if (random < dropProbability) {
+            printWithTimestamp("DROPPED: " + message);
+            return;
+        }
+    
+        if (delay == 0) {
+            out.println(message);
+            printWithTimestamp("SENT: " + message);
+        } else {
+            try {
+                Thread.sleep(delay);
+                out.println(message);
+                printWithTimestamp("SENT (delayed): " + message);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     // Proposer logic with PrintWriter
     private void proposerLogic(PrintWriter out) {
         try {
@@ -153,8 +179,8 @@ public class Node {
                 // Send prepare messages to all other nodes
                 for (String node : otherNodeNames) {
                     String prepareMessage = MessageConstructor.makePrepare(node, this.name, "PREPARE", proposalNumber.getProposalNumber());
-                    out.println(prepareMessage);
-                    printWithTimestamp("SENT: " + prepareMessage);
+                    sendMessage(out,prepareMessage);
+                    // printWithTimestamp("SENT: " + prepareMessage);
                 }
     
                 if (Thread.interrupted()) {
@@ -207,8 +233,8 @@ public class Node {
     
                 for (String node : otherNodeNames) {
                     String proposeMessage = MessageConstructor.makePropose(node, this.name, "PROPOSE", proposalNumber.getProposalNumber(), chosenValue);
-                    out.println(proposeMessage);
-                    printWithTimestamp("SENT: " + proposeMessage);
+                    sendMessage(out,proposeMessage);
+                    // printWithTimestamp("SENT: " + proposeMessage);
                 }
     
                 if (Thread.interrupted()) {
@@ -264,7 +290,11 @@ public class Node {
         if (otherNodeNames.contains(this.name)) {
             otherNodeNames.remove(this.name);
         }
-        connectedNodeCount = otherNodeNames.size() + 1;
+        // Remove duplicates from otherNodeNames
+        ArrayList<String> otherNodeNamesList = new ArrayList<>(otherNodeNames);
+        otherNodeNames = new HashSet<>(otherNodeNamesList);
+
+        connectedNodeCount = otherNodeNames.size() + 1; 
     }
 
     /* PHASE 1 */
@@ -283,11 +313,11 @@ public class Node {
             if (json.getBoolean("proposal_accepted")) {
                 System.out.println("Proposal has been accepted");
                 String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber, Float.toString(json.getFloat("accepted_id")), json.getString("accepted_value"));
-                out.println(promiseMessage);
+                sendMessage(out,promiseMessage);
                 printWithTimestamp("SENT:" + promiseMessage);
             } else {
                 String promiseMessage = MessageConstructor.makePromise(from, this.name, "PROMISE", proposalNumber);
-                out.println(promiseMessage);
+                sendMessage(out,promiseMessage);
                 printWithTimestamp("SENT:" + promiseMessage);
             }
         }
@@ -314,7 +344,7 @@ public class Node {
             json.put("accepted_value", value);
 
             String acceptMessage = MessageConstructor.makeAccept(from, this.name, "ACCEPT", proposalNumber, value);
-            out.println(acceptMessage);
+            sendMessage(out,acceptMessage);
             printWithTimestamp("SENT: " + acceptMessage);
         }
 
@@ -380,7 +410,7 @@ private void printWithTimestamp(String message) {
         } 
 
         Profile profile; 
-        if (    args[2].toUpperCase().equals("IR") 
+        if (    args[2].toUpperCase().equals("INSTANT") 
             ||  args[2].toUpperCase().equals("M2")
             ||  args[2].toUpperCase().equals("M3")
             ||  args[2].toUpperCase().equals("SMALL")
@@ -388,7 +418,7 @@ private void printWithTimestamp(String message) {
             System.out.println("Chosen profile: " + args[2]);
             profile = new Profile(args[2]);
         } else {
-            System.out.println("Invalid profile. Please choose from IR, M2, M3, SMALL, LARGE.");
+            System.out.println("Invalid profile. Please choose from INSTANT, M2, M3, SMALL, LARGE.");
             System.out.println("NOT profile: " + args[2]);
             return; 
         }
