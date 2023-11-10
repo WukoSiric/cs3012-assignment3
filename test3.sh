@@ -1,4 +1,6 @@
 #!/bin/bash
+make clean
+make
 
 # Start the ConnectionServer in the background
 java -cp .:./json.jar ConnectionServer > test3/ConnectionServer.log 2>&1 &

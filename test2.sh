@@ -1,4 +1,6 @@
 #!/bin/bash
+make clean
+make
 
 # Start the ConnectionServer in the background
 java ConnectionServer > test2/ConnectionServer.log 2>&1 &
