@@ -54,7 +54,7 @@ public class Profile {
             case M2:
                 return 0.2;
             case M3:
-                return 0.15;
+                return 0.50;
             case SMALL:
                 return 0.05;
             case LARGE:
